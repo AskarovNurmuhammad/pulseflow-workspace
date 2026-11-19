@@ -20,7 +20,10 @@ import {
   Filter,
   CheckSquare,
   Square,
-  Layers
+  Layers,
+  Clock,
+  Calendar,
+  X
 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, TeamMember, TimeLog, ViewMode } from './types';
 
@@ -116,12 +119,12 @@ const INITIAL_TEAM: TeamMember[] = [
   { id: 'tm-5', name: 'Nilufar Yusupova', avatar: 'NY', role: 'Data Scientist', email: 'nilufar@pulseflow.io', tasksCount: 3, completedCount: 7, status: 'online' }
 ];
 
-const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
-  { id: 'backlog', title: 'Rejadagi (Backlog)', color: 'border-slate-500' },
-  { id: 'todo', title: 'Bajarilishi kerak (To Do)', color: 'border-blue-500' },
-  { id: 'in_progress', title: 'Jarayonda (In Progress)', color: 'border-amber-500' },
-  { id: 'review', title: 'Tekshiruvda (Review)', color: 'border-purple-500' },
-  { id: 'done', title: 'Tugallandi (Done)', color: 'border-emerald-500' }
+const COLUMNS: { id: TaskStatus; title: string; color: string; badgeBg: string }[] = [
+  { id: 'backlog', title: 'Rejadagi (Backlog)', color: 'border-slate-400', badgeBg: 'bg-slate-500/10 text-slate-500' },
+  { id: 'todo', title: 'Bajarilishi kerak (To Do)', color: 'border-blue-500', badgeBg: 'bg-blue-500/10 text-blue-500' },
+  { id: 'in_progress', title: 'Jarayonda (In Progress)', color: 'border-amber-500', badgeBg: 'bg-amber-500/10 text-amber-500' },
+  { id: 'review', title: 'Tekshiruvda (Review)', color: 'border-purple-500', badgeBg: 'bg-purple-500/10 text-purple-500' },
+  { id: 'done', title: 'Tugallandi (Done)', color: 'border-emerald-500', badgeBg: 'bg-emerald-500/10 text-emerald-500' }
 ];
 
 export default function App() {
@@ -132,8 +135,7 @@ export default function App() {
 
   const [team] = useState<TeamMember[]>(INITIAL_TEAM);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
-  const [lang, setLang] = useState<'uz' | 'en' | 'ru'>('uz');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light'); // Standart qulay light rejim
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedLabel, setSelectedLabel] = useState<string>('all');
@@ -261,7 +263,7 @@ export default function App() {
       dueDate: newTaskForm.dueDate,
       createdAt: new Date().toISOString().split('T')[0],
       subtasks: [
-        { id: `st-${Date.now()}-1`, text: 'Boshlang\'ich qadam', done: false }
+        { id: `st-${Date.now()}-1`, text: 'Boshlang\'ich talablar', done: false }
       ],
       timeEstimateHours: Number(newTaskForm.timeEstimateHours) || 6
     };
@@ -282,7 +284,7 @@ export default function App() {
     confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 } });
   };
 
-  // Statistika
+  // Statistika hisoblari
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.status === 'done').length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -290,10 +292,10 @@ export default function App() {
 
   const priorityColor = (p: TaskPriority) => {
     switch (p) {
-      case 'urgent': return 'bg-rose-500/15 text-rose-400 border-rose-500/30';
-      case 'high': return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-      case 'medium': return 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30';
-      case 'low': return 'bg-slate-500/15 text-slate-400 border-slate-500/30';
+      case 'urgent': return 'bg-rose-500/10 text-rose-600 border-rose-500/30';
+      case 'high': return 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+      case 'medium': return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30';
+      case 'low': return 'bg-slate-500/10 text-slate-500 border-slate-500/30';
     }
   };
 
@@ -303,39 +305,59 @@ export default function App() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Mavzuga mos universal sinflar
+  const themeClasses = {
+    appBg: isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-[#f8fafc] text-slate-900',
+    headerBg: isDark ? 'bg-[#0b0f17]/90 border-slate-800' : 'bg-white/90 border-slate-200/80 shadow-xs',
+    card: isDark ? 'bg-[#141b29] border-slate-800 text-white shadow-none' : 'bg-white border-slate-200/90 text-slate-800 shadow-sm',
+    column: isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-100/70 border-slate-200',
+    taskCard: isDark
+      ? 'bg-[#192234] border-slate-800 text-white hover:border-indigo-500/40 hover:shadow-indigo-500/10'
+      : 'bg-white border-slate-200 text-slate-900 shadow-xs hover:border-indigo-400 hover:shadow-md',
+    subtaskBox: isDark ? 'bg-slate-900/80 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700',
+    input: isDark
+      ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+      : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 shadow-xs',
+    textMuted: isDark ? 'text-slate-400' : 'text-slate-500',
+    navBg: isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-slate-100 border-slate-200',
+    navInactive: isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900',
+    modalBg: isDark ? 'bg-[#141b29] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-2xl',
+    footerBg: isDark ? 'border-slate-800/80 bg-[#080b11] text-slate-500' : 'border-slate-200 bg-white text-slate-500',
+    tableHeader: isDark ? 'bg-slate-900/90 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600 font-bold',
+    tableRowHover: isDark ? 'hover:bg-slate-800/40 divide-slate-800/50' : 'hover:bg-slate-50 divide-slate-100'
+  };
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${themeClasses.appBg}`}>
 
       {/* TOP HEADER */}
-      <header className={`sticky top-0 z-30 backdrop-blur-md border-b px-4 lg:px-8 py-3.5 transition-colors ${
-        isDark ? 'bg-[#0b0f17]/90 border-slate-800' : 'bg-white/90 border-slate-200'
-      }`}>
+      <header className={`sticky top-0 z-30 backdrop-blur-md border-b px-4 lg:px-8 py-3.5 transition-colors ${themeClasses.headerBg}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
 
-          {/* Logo va Sprint belgisi */}
+          {/* Logo va Sprint nishoni */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 font-extrabold text-lg">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 font-extrabold text-lg">
               <Layers className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-purple-400 bg-clip-text text-transparent">
+                <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
                   PulseFlow
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 uppercase">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase">
                   Sprint #42
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Enterprise Agile & Task Workspace</p>
+              <p className={`text-[11px] font-medium hidden sm:block ${themeClasses.textMuted}`}>Enterprise Agile & Task Workspace</p>
             </div>
           </div>
 
-          {/* Tab tugmalari */}
-          <nav className="hidden md:flex items-center gap-1 p-1 bg-slate-900/60 rounded-2xl border border-slate-800 text-xs font-bold">
+          {/* Tab navigatsiyasi */}
+          <nav className={`hidden md:flex items-center gap-1 p-1 rounded-2xl border text-xs font-bold ${themeClasses.navBg}`}>
             <button
               onClick={() => setViewMode('board')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-                viewMode === 'board' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                viewMode === 'board' ? 'bg-indigo-600 text-white shadow-sm' : themeClasses.navInactive
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
@@ -344,7 +366,7 @@ export default function App() {
             <button
               onClick={() => setViewMode('list')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-                viewMode === 'list' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                viewMode === 'list' ? 'bg-indigo-600 text-white shadow-sm' : themeClasses.navInactive
               }`}
             >
               <ListTodo className="w-3.5 h-3.5" />
@@ -353,7 +375,7 @@ export default function App() {
             <button
               onClick={() => setViewMode('analytics')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-                viewMode === 'analytics' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                viewMode === 'analytics' ? 'bg-indigo-600 text-white shadow-sm' : themeClasses.navInactive
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -362,7 +384,7 @@ export default function App() {
             <button
               onClick={() => setViewMode('timer')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-                viewMode === 'timer' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                viewMode === 'timer' ? 'bg-indigo-600 text-white shadow-sm' : themeClasses.navInactive
               }`}
             >
               <Timer className="w-3.5 h-3.5" />
@@ -371,7 +393,7 @@ export default function App() {
             <button
               onClick={() => setViewMode('team')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-                viewMode === 'team' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                viewMode === 'team' ? 'bg-indigo-600 text-white shadow-sm' : themeClasses.navInactive
               }`}
             >
               <Users2 className="w-3.5 h-3.5" />
@@ -379,12 +401,12 @@ export default function App() {
             </button>
           </nav>
 
-          {/* O'ng tomon actionlari */}
+          {/* O'ng tomon boshqaruvi */}
           <div className="flex items-center gap-2.5">
-            {/* Yangi vazifa qo'shish */}
+            {/* Vazifa qo'shish */}
             <button
               onClick={() => setIsNewTaskOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold shadow-lg shadow-indigo-500/25 transition-transform hover:scale-105 active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-transform hover:scale-105 active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Vazifa Qo'shish</span>
@@ -393,8 +415,11 @@ export default function App() {
             {/* Tema almashtirish */}
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              title={isDark ? 'Yorug\' rejimga o\'tish' : 'Qorong\'i rejimga o\'tish'}
               className={`p-2 rounded-xl border transition-all ${
-                isDark ? 'bg-slate-900 border-slate-800 text-amber-400' : 'bg-slate-100 border-slate-200 text-slate-700'
+                isDark
+                  ? 'bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-800'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-xs'
               }`}
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -403,55 +428,55 @@ export default function App() {
         </div>
 
         {/* Mobil Nav */}
-        <div className="flex md:hidden items-center justify-between gap-1 pt-3 border-t border-slate-800/60 mt-2 text-xs font-bold">
-          <button onClick={() => setViewMode('board')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'board' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>Kanban</button>
-          <button onClick={() => setViewMode('list')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>Ro'yxat</button>
-          <button onClick={() => setViewMode('analytics')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'analytics' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>Analitika</button>
-          <button onClick={() => setViewMode('timer')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'timer' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>Fokus</button>
-          <button onClick={() => setViewMode('team')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'team' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>Jamoa</button>
+        <div className="flex md:hidden items-center justify-between gap-1 pt-3 border-t border-inherit mt-2 text-xs font-bold">
+          <button onClick={() => setViewMode('board')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'board' ? 'bg-indigo-600 text-white' : themeClasses.navInactive}`}>Kanban</button>
+          <button onClick={() => setViewMode('list')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'list' ? 'bg-indigo-600 text-white' : themeClasses.navInactive}`}>Ro'yxat</button>
+          <button onClick={() => setViewMode('analytics')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'analytics' ? 'bg-indigo-600 text-white' : themeClasses.navInactive}`}>Analitika</button>
+          <button onClick={() => setViewMode('timer')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'timer' ? 'bg-indigo-600 text-white' : themeClasses.navInactive}`}>Fokus</button>
+          <button onClick={() => setViewMode('team')} className={`flex-1 py-1.5 rounded-lg ${viewMode === 'team' ? 'bg-indigo-600 text-white' : themeClasses.navInactive}`}>Jamoa</button>
         </div>
       </header>
 
       {/* STATISTIKA METRIKALARI */}
       <section className="px-4 lg:px-8 py-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-panel rounded-2xl p-4 border flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center font-bold">
+          <div className={`${themeClasses.card} rounded-2xl p-4 border flex items-center gap-3`}>
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xl font-extrabold">{completionRate}%</p>
-              <p className="text-xs text-slate-400">Sprint Tugallanishi</p>
+              <p className={`text-xs font-medium ${themeClasses.textMuted}`}>Sprint Tugallanishi</p>
             </div>
           </div>
 
-          <div className="glass-panel rounded-2xl p-4 border flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold">
+          <div className={`${themeClasses.card} rounded-2xl p-4 border flex items-center gap-3`}>
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xl font-extrabold">{completedTasks} / {totalTasks}</p>
-              <p className="text-xs text-slate-400">Tugallangan Vazifalar</p>
+              <p className={`text-xs font-medium ${themeClasses.textMuted}`}>Tugallangan Vazifalar</p>
             </div>
           </div>
 
-          <div className="glass-panel rounded-2xl p-4 border flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center font-bold">
+          <div className={`${themeClasses.card} rounded-2xl p-4 border flex items-center gap-3`}>
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
               <AlertCircle className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xl font-extrabold">{urgentCount}</p>
-              <p className="text-xs text-slate-400">Kechiktirib Bo'lmas (Urgent)</p>
+              <p className={`text-xs font-medium ${themeClasses.textMuted}`}>Kechiktirib Bo'lmas (Urgent)</p>
             </div>
           </div>
 
-          <div className="glass-panel rounded-2xl p-4 border flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold">
+          <div className={`${themeClasses.card} rounded-2xl p-4 border flex items-center gap-3`}>
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
               <Users2 className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xl font-extrabold">{team.length} ta faol</p>
-              <p className="text-xs text-slate-400">Muhandislar Jamoasi</p>
+              <p className="text-xl font-extrabold">{team.length} ta a'zo</p>
+              <p className={`text-xs font-medium ${themeClasses.textMuted}`}>Muhandislar Jamoasi</p>
             </div>
           </div>
         </div>
@@ -459,7 +484,7 @@ export default function App() {
 
       {/* FILTER VA QIDIRUV SATRI */}
       <section className="px-4 lg:px-8 max-w-7xl mx-auto mb-6">
-        <div className="glass-panel rounded-2xl p-3 border flex flex-wrap items-center justify-between gap-3">
+        <div className={`${themeClasses.card} rounded-2xl p-3 border flex flex-wrap items-center justify-between gap-3`}>
           <div className="flex-1 min-w-[220px] relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -467,7 +492,7 @@ export default function App() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Vazifa nomi yoki tavsifini qidirish..."
-              className="w-full py-2 pl-9 pr-3 text-xs rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500"
+              className={`w-full py-2 pl-9 pr-3 text-xs rounded-xl outline-none border transition-all ${themeClasses.input}`}
             />
           </div>
 
@@ -476,7 +501,7 @@ export default function App() {
             <select
               value={selectedPriority}
               onChange={(e) => setSelectedPriority(e.target.value)}
-              className="py-1.5 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none cursor-pointer"
+              className={`py-1.5 px-3 rounded-xl border outline-none cursor-pointer ${themeClasses.input}`}
             >
               <option value="all">Barcha Ustuvorliklar</option>
               <option value="urgent">Urgent (Shoshilinch)</option>
@@ -488,7 +513,7 @@ export default function App() {
             <select
               value={selectedLabel}
               onChange={(e) => setSelectedLabel(e.target.value)}
-              className="py-1.5 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none cursor-pointer"
+              className={`py-1.5 px-3 rounded-xl border outline-none cursor-pointer ${themeClasses.input}`}
             >
               <option value="all">Barcha Teglar</option>
               <option value="DevOps">DevOps</option>
@@ -510,21 +535,21 @@ export default function App() {
               const columnTasks = filteredTasks.filter(t => t.status === col.id);
 
               return (
-                <div key={col.id} className="glass-panel rounded-2xl p-3 border flex flex-col min-h-[500px]">
+                <div key={col.id} className={`${themeClasses.column} rounded-2xl p-3 border flex flex-col min-h-[500px]`}>
                   {/* Ustun sarlavhasi */}
                   <div className={`flex items-center justify-between pb-3 mb-3 border-b-2 ${col.color}`}>
-                    <h3 className="font-extrabold text-xs tracking-wide text-slate-200">
+                    <h3 className="font-extrabold text-xs tracking-wide">
                       {col.title}
                     </h3>
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${col.badgeBg}`}>
                       {columnTasks.length}
                     </span>
                   </div>
 
-                  {/* Ustun ichidagi vazifalar */}
+                  {/* Vazifalar ro'yxati */}
                   <div className="space-y-3 flex-1">
                     {columnTasks.length === 0 ? (
-                      <div className="py-12 text-center text-slate-500 text-xs">
+                      <div className="py-12 text-center text-slate-400 text-xs font-medium">
                         Hozircha vazifa yo'q
                       </div>
                     ) : (
@@ -534,12 +559,14 @@ export default function App() {
                         return (
                           <div
                             key={task.id}
-                            className="kanban-card rounded-2xl p-4 flex flex-col justify-between group"
+                            className={`${themeClasses.taskCard} rounded-2xl p-4 flex flex-col justify-between group transition-all duration-200`}
                           >
                             <div>
                               {/* Teg va Ustuvorlik */}
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-indigo-400 border border-slate-700">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                  isDark ? 'bg-slate-800 text-indigo-400 border-slate-700' : 'bg-slate-100 text-indigo-600 border-slate-200'
+                                }`}>
                                   {task.label}
                                 </span>
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${priorityColor(task.priority)} uppercase`}>
@@ -547,24 +574,24 @@ export default function App() {
                                 </span>
                               </div>
 
-                              <h4 className="font-bold text-sm text-white mb-1.5 group-hover:text-indigo-400 transition-colors">
+                              <h4 className="font-bold text-sm mb-1.5 group-hover:text-indigo-600 transition-colors">
                                 {task.title}
                               </h4>
 
-                              <p className="text-xs text-slate-400 line-clamp-2 mb-3 leading-relaxed">
+                              <p className={`text-xs line-clamp-2 mb-3 leading-relaxed ${themeClasses.textMuted}`}>
                                 {task.description}
                               </p>
 
                               {/* Subtasklar progress */}
                               {task.subtasks.length > 0 && (
-                                <div className="space-y-1.5 mb-3 bg-slate-900/60 p-2 rounded-xl border border-slate-800">
-                                  <div className="flex justify-between text-[10px] text-slate-400">
+                                <div className={`space-y-1.5 mb-3 p-2.5 rounded-xl border ${themeClasses.subtaskBox}`}>
+                                  <div className="flex justify-between text-[10px] font-semibold text-slate-500">
                                     <span>Qadamlar:</span>
                                     <span>{doneSubtasks} / {task.subtasks.length}</span>
                                   </div>
-                                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
                                     <div
-                                      className="bg-indigo-500 h-full rounded-full transition-all"
+                                      className="bg-indigo-600 h-full rounded-full transition-all"
                                       style={{ width: `${(doneSubtasks / task.subtasks.length) * 100}%` }}
                                     />
                                   </div>
@@ -574,14 +601,14 @@ export default function App() {
                                       <div
                                         key={st.id}
                                         onClick={() => handleToggleSubtask(task.id, st.id)}
-                                        className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer hover:text-white"
+                                        className="flex items-center gap-1.5 text-[11px] cursor-pointer hover:text-indigo-600 transition-colors"
                                       >
                                         {st.done ? (
-                                          <CheckSquare className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                          <CheckSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                         ) : (
-                                          <Square className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                          <Square className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                         )}
-                                        <span className={st.done ? 'line-through text-slate-500' : ''}>{st.text}</span>
+                                        <span className={st.done ? 'line-through text-slate-400' : ''}>{st.text}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -589,23 +616,24 @@ export default function App() {
                               )}
                             </div>
 
-                            {/* Footer: Assignee, Muddat va Statusni siljitish */}
-                            <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs">
+                            {/* Footer: Mas'ul shaxs, muddat va status almashtirish */}
+                            <div className="pt-2 border-t border-inherit flex items-center justify-between text-xs">
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white shadow">
+                                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shadow-xs">
                                   {task.assignee.avatar}
                                 </div>
-                                <span className="text-[11px] text-slate-400 truncate max-w-[80px]">
+                                <span className={`text-[11px] font-medium truncate max-w-[80px] ${themeClasses.textMuted}`}>
                                   {task.assignee.name.split(' ')[0]}
                                 </span>
                               </div>
 
                               <div className="flex items-center gap-1">
-                                {/* Keyingi statusga o'tkazish selector */}
                                 <select
                                   value={task.status}
                                   onChange={(e) => handleMoveStatus(task.id, e.target.value as TaskStatus)}
-                                  className="text-[10px] bg-slate-900 border border-slate-700 rounded-lg px-1.5 py-0.5 text-slate-300 outline-none cursor-pointer"
+                                  className={`text-[10px] font-semibold border rounded-lg px-1.5 py-0.5 outline-none cursor-pointer ${
+                                    isDark ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-white border-slate-300 text-slate-700'
+                                  }`}
                                 >
                                   <option value="backlog">Backlog</option>
                                   <option value="todo">To Do</option>
@@ -616,7 +644,7 @@ export default function App() {
 
                                 <button
                                   onClick={() => handleDeleteTask(task.id)}
-                                  className="p-1 text-slate-500 hover:text-rose-400 transition-colors"
+                                  className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
                                   title="O'chirish"
                                 >
                                   <Trash2 className="w-3 h-3" />
@@ -635,13 +663,13 @@ export default function App() {
         </main>
       )}
 
-      {/* 2-KO'RINISh: RO'YXAT (LIST / TABLE VIEW) */}
+      {/* 2-KO'RINISh: RO'YXAT (TABLE / LIST VIEW) */}
       {viewMode === 'list' && (
         <main className="px-4 lg:px-8 max-w-7xl mx-auto mb-20">
-          <div className="glass-panel rounded-2xl border overflow-hidden">
+          <div className={`${themeClasses.card} rounded-2xl border overflow-hidden`}>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider">
+                <thead className={`${themeClasses.tableHeader} uppercase text-[10px] tracking-wider`}>
                   <tr>
                     <th className="py-3 px-4">ID & Nomi</th>
                     <th className="py-3 px-4">Holat</th>
@@ -652,19 +680,19 @@ export default function App() {
                     <th className="py-3 px-4 text-right">Amal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/50">
+                <tbody className="divide-y divide-inherit">
                   {filteredTasks.map(task => (
-                    <tr key={task.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-white">
-                        <span className="text-indigo-400 font-mono text-xs mr-2">{task.id}</span>
+                    <tr key={task.id} className={`${themeClasses.tableRowHover} transition-colors`}>
+                      <td className="py-3.5 px-4 font-bold">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-mono text-xs mr-2">{task.id}</span>
                         <span>{task.title}</span>
                       </td>
                       <td className="py-3.5 px-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          task.status === 'done' ? 'bg-emerald-500/20 text-emerald-400' :
-                          task.status === 'in_progress' ? 'bg-amber-500/20 text-amber-400' :
-                          task.status === 'review' ? 'bg-purple-500/20 text-purple-400' :
-                          'bg-slate-800 text-slate-300'
+                          task.status === 'done' ? 'bg-emerald-500/10 text-emerald-600' :
+                          task.status === 'in_progress' ? 'bg-amber-500/10 text-amber-600' :
+                          task.status === 'review' ? 'bg-purple-500/10 text-purple-600' :
+                          'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                         }`}>
                           {task.status.replace('_', ' ').toUpperCase()}
                         </span>
@@ -674,20 +702,20 @@ export default function App() {
                           {task.priority}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400 font-semibold">{task.label}</td>
+                      <td className={`py-3.5 px-4 font-semibold ${themeClasses.textMuted}`}>{task.label}</td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
                             {task.assignee.avatar}
                           </div>
-                          <span className="text-slate-300">{task.assignee.name}</span>
+                          <span>{task.assignee.name}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400 font-mono">{task.dueDate}</td>
+                      <td className={`py-3.5 px-4 font-mono ${themeClasses.textMuted}`}>{task.dueDate}</td>
                       <td className="py-3.5 px-4 text-right">
                         <button
                           onClick={() => handleDeleteTask(task.id)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -701,14 +729,13 @@ export default function App() {
         </main>
       )}
 
-      {/* 3-KO'RINISh: ANALITIKA (ANALYTICS & SPRINT CHARTS) */}
+      {/* 3-KO'RINISh: ANALITIKA */}
       {viewMode === 'analytics' && (
         <main className="px-4 lg:px-8 max-w-7xl mx-auto mb-20 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Statuslar bo'yicha progress */}
-            <div className="glass-panel rounded-3xl p-6 border space-y-4">
+            <div className={`${themeClasses.card} rounded-3xl p-6 border space-y-4`}>
               <h3 className="font-extrabold text-base flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-indigo-400" />
+                <BarChart3 className="w-5 h-5 text-indigo-600" />
                 <span>Vazifalar Bosqichlari Taqsimoti</span>
               </h3>
 
@@ -719,39 +746,40 @@ export default function App() {
                 return (
                   <div key={col.id} className="space-y-1.5 text-xs">
                     <div className="flex justify-between font-bold">
-                      <span className="text-slate-300">{col.title}</span>
-                      <span className="text-indigo-400">{count} ta ({pct}%)</span>
+                      <span className={themeClasses.textMuted}>{col.title}</span>
+                      <span className="text-indigo-600 dark:text-indigo-400">{count} ta ({pct}%)</span>
                     </div>
-                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                      <div className="bg-indigo-500 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div className="bg-indigo-600 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* Jamoa unumdorligi */}
-            <div className="glass-panel rounded-3xl p-6 border space-y-4">
+            <div className={`${themeClasses.card} rounded-3xl p-6 border space-y-4`}>
               <h3 className="font-extrabold text-base flex items-center gap-2">
-                <Users2 className="w-5 h-5 text-purple-400" />
+                <Users2 className="w-5 h-5 text-purple-600" />
                 <span>Jamoa Unumdorligi (Top Performers)</span>
               </h3>
 
               <div className="space-y-3">
                 {team.map(member => (
-                  <div key={member.id} className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
+                  <div key={member.id} className={`p-3 rounded-2xl border flex items-center justify-between text-xs ${
+                    isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+                  }`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white text-xs">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
                         {member.avatar}
                       </div>
                       <div>
-                        <h4 className="font-bold text-sm text-white">{member.name}</h4>
-                        <p className="text-slate-400 text-[11px]">{member.role}</p>
+                        <h4 className="font-bold text-sm">{member.name}</h4>
+                        <p className={`text-[11px] ${themeClasses.textMuted}`}>{member.role}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="font-extrabold text-emerald-400">{member.completedCount} ta tugatilgan</span>
-                      <p className="text-slate-500 text-[10px]">{member.tasksCount} ta jarayonda</p>
+                      <span className="font-extrabold text-emerald-600">{member.completedCount} ta tugatilgan</span>
+                      <p className={`text-[10px] ${themeClasses.textMuted}`}>{member.tasksCount} ta jarayonda</p>
                     </div>
                   </div>
                 ))}
@@ -764,22 +792,20 @@ export default function App() {
       {/* 4-KO'RINISh: POMODORO FOKUS TAYMERI */}
       {viewMode === 'timer' && (
         <main className="px-4 lg:px-8 max-w-xl mx-auto mb-20">
-          <div className="glass-panel rounded-3xl p-8 border text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/15 text-indigo-400 text-xs font-bold border border-indigo-500/30">
+          <div className={`${themeClasses.card} rounded-3xl p-8 border text-center space-y-6`}>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-600 text-xs font-bold border border-indigo-500/20">
               <Timer className="w-4 h-4" />
               <span>{timerMode === 'focus' ? 'Fokus Ish Seansi (25 min)' : 'Dam Olish Tanaffusi (5 min)'}</span>
             </div>
 
-            {/* Raqamli soat */}
-            <div className="text-7xl sm:text-8xl font-extrabold font-mono text-white tracking-wider my-4">
+            <div className="text-7xl sm:text-8xl font-extrabold font-mono tracking-wider my-4">
               {formatTimer(timerSeconds)}
             </div>
 
-            {/* Tugmalar */}
             <div className="flex items-center justify-center gap-4">
               <button
                 onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-extrabold text-base shadow-lg shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-extrabold text-base shadow-lg shadow-indigo-500/25 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
               >
                 {isTimerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                 <span>{isTimerRunning ? 'Pauza' : 'Boshlash'}</span>
@@ -790,22 +816,25 @@ export default function App() {
                   setIsTimerRunning(false);
                   setTimerSeconds(timerMode === 'focus' ? 25 * 60 : 5 * 60);
                 }}
-                className="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                className={`p-4 rounded-2xl border transition-colors ${
+                  isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'
+                }`}
                 title="Qayta o'rnatish"
               >
                 <RotateCcw className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Tarix jurnallari */}
             {timeLogs.length > 0 && (
-              <div className="border-t border-slate-800 pt-5 text-left space-y-2">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Bugungi Fokus Tarixi</h4>
+              <div className="border-t border-inherit pt-5 text-left space-y-2">
+                <h4 className={`text-xs font-bold uppercase tracking-wider ${themeClasses.textMuted}`}>Bugungi Fokus Tarixi</h4>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {timeLogs.map(log => (
-                    <div key={log.id} className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex justify-between text-xs">
-                      <span className="font-semibold text-slate-300">{log.taskTitle}</span>
-                      <span className="font-mono text-indigo-400">{log.date}</span>
+                    <div key={log.id} className={`p-2 rounded-xl border flex justify-between text-xs ${
+                      isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
+                    }`}>
+                      <span className="font-semibold">{log.taskTitle}</span>
+                      <span className="font-mono text-indigo-600 font-bold">{log.date}</span>
                     </div>
                   ))}
                 </div>
@@ -820,34 +849,34 @@ export default function App() {
         <main className="px-4 lg:px-8 max-w-5xl mx-auto mb-20">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {team.map(member => (
-              <div key={member.id} className="glass-panel rounded-3xl p-6 border space-y-4">
+              <div key={member.id} className={`${themeClasses.card} rounded-3xl p-6 border space-y-4`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-extrabold text-white text-base shadow">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-extrabold text-white text-base shadow-sm">
                     {member.avatar}
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-base text-white">{member.name}</h4>
-                    <p className="text-xs text-indigo-400 font-semibold">{member.role}</p>
+                    <h4 className="font-extrabold text-base">{member.name}</h4>
+                    <p className="text-xs text-indigo-600 font-semibold">{member.role}</p>
                   </div>
                 </div>
 
-                <div className="space-y-2 text-xs border-t border-slate-800 pt-3">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Email:</span>
-                    <span className="text-slate-200">{member.email}</span>
+                <div className="space-y-2 text-xs border-t border-inherit pt-3">
+                  <div className="flex justify-between">
+                    <span className={themeClasses.textMuted}>Email:</span>
+                    <span className="font-medium">{member.email}</span>
                   </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>Status:</span>
+                  <div className="flex justify-between">
+                    <span className={themeClasses.textMuted}>Status:</span>
                     <span className={`font-bold capitalize ${
-                      member.status === 'online' ? 'text-emerald-400' :
-                      member.status === 'busy' ? 'text-amber-400' : 'text-slate-500'
+                      member.status === 'online' ? 'text-emerald-600' :
+                      member.status === 'busy' ? 'text-amber-600' : 'text-slate-400'
                     }`}>
                       ● {member.status}
                     </span>
                   </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>Yakunlangan ishlar:</span>
-                    <span className="text-emerald-400 font-bold">{member.completedCount} ta</span>
+                  <div className="flex justify-between">
+                    <span className={themeClasses.textMuted}>Yakunlangan ishlar:</span>
+                    <span className="text-emerald-600 font-bold">{member.completedCount} ta</span>
                   </div>
                 </div>
               </div>
@@ -858,50 +887,50 @@ export default function App() {
 
       {/* YANGI VAZIFA QO'ShISh MODALI */}
       {isNewTaskOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl border border-slate-700">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`${themeClasses.modalBg} rounded-3xl max-w-lg w-full p-6 sm:p-8 relative border`}>
             <button
               onClick={() => setIsNewTaskOpen(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full bg-slate-800"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
 
             <h3 className="text-xl font-extrabold mb-1">Yangi Vazifa Yaratish</h3>
-            <p className="text-xs text-slate-400 mb-5">Sprint doskasiga yangi vazifani qo'shing.</p>
+            <p className={`text-xs mb-5 ${themeClasses.textMuted}`}>Sprint doskasiga yangi vazifani qo'shing.</p>
 
             <form onSubmit={handleCreateTask} className="space-y-4 text-xs sm:text-sm">
               <div>
-                <label className="block mb-1 font-semibold text-slate-300">Vazifa nomi</label>
+                <label className="block mb-1 font-semibold">Vazifa nomi</label>
                 <input
                   type="text"
                   required
                   placeholder="Masalan: Redis kesh qatlamini ulash"
                   value={newTaskForm.title}
                   onChange={(e) => setNewTaskForm({ ...newTaskForm, title: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none ${themeClasses.input}`}
                 />
               </div>
 
               <div>
-                <label className="block mb-1 font-semibold text-slate-300">Batafsil tavsif</label>
+                <label className="block mb-1 font-semibold">Batafsil tavsif</label>
                 <textarea
                   rows={3}
                   required
                   placeholder="Vazifa maqsadi va texnik talablari..."
                   value={newTaskForm.description}
                   onChange={(e) => setNewTaskForm({ ...newTaskForm, description: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500 resize-none"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none resize-none ${themeClasses.input}`}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block mb-1 font-semibold text-slate-300">Ustuvorlik (Priority)</label>
+                  <label className="block mb-1 font-semibold">Ustuvorlik (Priority)</label>
                   <select
                     value={newTaskForm.priority}
                     onChange={(e) => setNewTaskForm({ ...newTaskForm, priority: e.target.value as TaskPriority })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500 cursor-pointer"
+                    className={`w-full px-3 py-2 rounded-xl border outline-none cursor-pointer ${themeClasses.input}`}
                   >
                     <option value="urgent">Urgent (Shoshilinch)</option>
                     <option value="high">High (Yuqori)</option>
@@ -911,11 +940,11 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-semibold text-slate-300">Boshlang'ich Holat</label>
+                  <label className="block mb-1 font-semibold">Boshlang'ich Holat</label>
                   <select
                     value={newTaskForm.status}
                     onChange={(e) => setNewTaskForm({ ...newTaskForm, status: e.target.value as TaskStatus })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500 cursor-pointer"
+                    className={`w-full px-3 py-2 rounded-xl border outline-none cursor-pointer ${themeClasses.input}`}
                   >
                     <option value="todo">To Do</option>
                     <option value="backlog">Backlog</option>
@@ -926,23 +955,23 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block mb-1 font-semibold text-slate-300">Teg (Label)</label>
+                  <label className="block mb-1 font-semibold">Teg (Label)</label>
                   <input
                     type="text"
                     required
                     placeholder="Masalan: Frontend, API"
                     value={newTaskForm.label}
                     onChange={(e) => setNewTaskForm({ ...newTaskForm, label: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500"
+                    className={`w-full px-3 py-2 rounded-xl border outline-none ${themeClasses.input}`}
                   />
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-semibold text-slate-300">Mas'ul Shaxs</label>
+                  <label className="block mb-1 font-semibold">Mas'ul Shaxs</label>
                   <select
                     value={newTaskForm.assigneeName}
                     onChange={(e) => setNewTaskForm({ ...newTaskForm, assigneeName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500 cursor-pointer"
+                    className={`w-full px-3 py-2 rounded-xl border outline-none cursor-pointer ${themeClasses.input}`}
                   >
                     {team.map(m => (
                       <option key={m.id} value={m.name}>{m.name}</option>
@@ -953,31 +982,31 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block mb-1 font-semibold text-slate-300">Tugash muddati</label>
+                  <label className="block mb-1 font-semibold">Tugash muddati</label>
                   <input
                     type="date"
                     required
                     value={newTaskForm.dueDate}
                     onChange={(e) => setNewTaskForm({ ...newTaskForm, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500"
+                    className={`w-full px-3 py-2 rounded-xl border outline-none ${themeClasses.input}`}
                   />
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-semibold text-slate-300">Taxminiy soat</label>
+                  <label className="block mb-1 font-semibold">Taxminiy soat</label>
                   <input
                     type="number"
                     min={1}
                     value={newTaskForm.timeEstimateHours}
                     onChange={(e) => setNewTaskForm({ ...newTaskForm, timeEstimateHours: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-indigo-500"
+                    className={`w-full px-3 py-2 rounded-xl border outline-none ${themeClasses.input}`}
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 text-white font-extrabold rounded-xl text-sm shadow-lg shadow-indigo-500/30 hover:scale-[1.01] active:scale-[0.99] transition-transform"
+                className="w-full py-3.5 bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 text-white font-extrabold rounded-xl text-sm shadow-lg shadow-indigo-500/25 hover:scale-[1.01] active:scale-[0.99] transition-transform"
               >
                 Vazifani Doskaga Qo'shish
               </button>
@@ -987,17 +1016,17 @@ export default function App() {
       )}
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-800/80 bg-[#080b11] text-slate-500 py-10 px-4 lg:px-8 text-xs">
+      <footer className={`border-t py-10 px-4 lg:px-8 text-xs transition-colors ${themeClasses.footerBg}`}>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-indigo-400" />
-            <span className="font-extrabold text-slate-300 tracking-wider">PULSEFLOW WORKSPACE</span>
+            <Layers className="w-4 h-4 text-indigo-600" />
+            <span className="font-extrabold tracking-wider">PULSEFLOW WORKSPACE</span>
             <span>• TypeScript SaaS Edition © 2026</span>
           </div>
-          <div className="flex items-center gap-6 text-slate-400">
+          <div className={`flex items-center gap-6 ${themeClasses.textMuted}`}>
             <span>Sprint Rejalashtirish</span>
             <span>Kanban Doska</span>
-            <span>Pomodoro Taymer</span>
+            <span>Pomodoro Fokus</span>
           </div>
         </div>
       </footer>
